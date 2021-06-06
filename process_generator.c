@@ -49,6 +49,8 @@ int main(int argc, char *argv[])
         processes[numOfProcesses].priority = d;
         numOfProcesses++;
     }
+    char numProcesses[500];
+    sprintf(numProcesses, "%d", numOfProcesses);
 
     // 3. Initiate and create the scheduler and clock processes.
     int clkProcess = fork();
@@ -69,7 +71,11 @@ int main(int argc, char *argv[])
     //TODO Send procHeaders while executing
     else if (schedulerProcess == 0)
     {
-        execl("scheduler.out", "scheduler", argv[3], argv[5], NULL);
+        system("gcc scheduler.c -o scheduler.out");
+        if (argc > 3)
+            execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], NULL);
+        else
+            execl("scheduler.out", "scheduler", argv[3], numProcesses, NULL);
     }
     FILE *f = fopen("key", "r");
     key_t key_id = ftok("key", 'a');
@@ -98,17 +104,22 @@ int main(int argc, char *argv[])
     while (i < numOfProcesses)
     {
         int temp = processes[i].arrivalTime;
+        processes[i].valid = false;
         if (temp > getClk())
         {
             sleep(1);
             printf("%d\n", getClk());
-            continue;
+            int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
+            if (val == -1)
+                printf("Errror in send Process#%d\n", i);
         }
         else
         {
             // 6. Send the information to the scheduler at the appropriate time.
+            processes[i].valid = true;
+            processes[i].sendTime = temp;
             printf("Sending Process#%d\n", i);
-            int val = msgsnd(msgQ, &processes[i], sizeof(processes[i].id) + sizeof(processes[i].arrivalTime) + sizeof(processes[i].runTime) + sizeof(processes[i].priority) + sizeof(processes[i].status), !IPC_NOWAIT);
+            int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
             if (val == -1)
                 printf("Errror in send Process#%d\n", i);
             i++;
@@ -116,8 +127,6 @@ int main(int argc, char *argv[])
     }
     // TODO Generation Main Loop
     // 7. Clear clock resources
-    printf("Terminate msgQ from generator\n");
-    msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(false);
 }
 

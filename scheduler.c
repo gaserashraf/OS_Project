@@ -16,21 +16,23 @@ void FCFS();
 void SJF();
 void HPF();
 void SRTN();
+void getArrivalProcessAndPushIt();
 void RR(int quantum);
 
 struct Queue *q;
 struct Process processRecv;
-int chosenAlgorithm,paramter=-1;
-bool lastProcess=0;
+int chosenAlgorithm, paramter = -1, numOfProcesses = -1;
+bool lastProcess = 0;
+int msgQ;
 
-int *shmId;//for the running process
+int *shmId; //for the running process
 int main(int argc, char *argv[])
 {
     //  initClk();
     FILE *f;
     f = fopen("key", "r");
     key_t key_id = ftok("key", 'a');
-    int msgQ = msgget(key_id, 0666 | IPC_CREAT);
+    msgQ = msgget(key_id, 0666 | IPC_CREAT);
     if (msgQ == -1)
     {
         perror("Error in creating message queue");
@@ -44,17 +46,18 @@ int main(int argc, char *argv[])
         perror("Error in Receiving");
     printf("ChosenAlgorithm: %ld\nnumOfProcesses: %ld\nprocessParam:%ld\n", procHeaders.algorithm, procHeaders.numOfProcesses, procHeaders.processParameter);*/
     chosenAlgorithm = atoi(argv[1]);
-    if(chosenAlgorithm==5) paramter =atoi(argv[1]);
+    numOfProcesses = atoi(argv[2]);
+    if (chosenAlgorithm == 5)
+        paramter = atoi(argv[3]);
 
-    key_t sharedMemKey = ftok("Makefile",65);
-    shmId = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
-
-
+    // key_t sharedMemKey = ftok("Makefile", 65);
+    // shmId = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
+    getArrivalProcessAndPushIt();
     printf("Terminate msgQ from Scheduler\n");
     msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(true);
 }
-int startProcess(Process p)
+/*int startProcess(Process p)
 {
     
     // to do : fork the Process
@@ -89,32 +92,34 @@ void finishProcess(Process p)
     // to do : clac waiting , fininsh time..............
     // to do print the log
     printf("at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d",getClk(),p.arrivalTime, p.runTime,p.remningTime,getClk()-p.arrivalTime);
-}
+}*/
 void getArrivalProcessAndPushIt()
-{   
+{
     while (1)
     {
-        processRecv.valid=0;//clear prev recv mess
+        processRecv.valid = 0; //clear prev recv mess
         processRecv.mtype = 1;
-        int val = msgrcv(msgQ, &processRecv, sizeof(processRecv), 0, !IPC_NOWAIT);
+        int val = msgrcv(msgQ, &processRecv, 100 * sizeof(processRecv), 0, !IPC_NOWAIT);
         if (val == -1)
+        {
             perror("Error in Receiving");
+            break;
+        }
         else
-        { 
-            //printf("Received Process\n");
-            //printf("%d %d %d %d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority);
-            //flush(stdout);
-            if(processRecv.valid==0)//didn't get process at this time
-                return;
-            if (processRecv.id == procHeaders.numOfProcesses)
-                lastProcess=1;
-            queuePush(q,processRecv);
-            return;
-            
+        {
+            if (processRecv.valid == 1)
+            {
+                printf("Received Process\n");
+                printf("%d %d %d %d RecvTime:%d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority, processRecv.sendTime);
+                //  queuePush(q, processRecv);
+                if (processRecv.id == numOfProcesses)
+                    break;
+            }
         }
     }
+    return;
 }
-void RR(int quantum)
+/*void RR(int quantum)
 {
    
     queueConstructor(q);
@@ -154,5 +159,5 @@ void RR(int quantum)
         // to do : if it last process or the algorithm finish we will out from this loop
     }
 }
-//1
+//1*/
 /* p1 p2 p3 */

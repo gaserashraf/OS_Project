@@ -40,8 +40,9 @@ struct Process
     int remningTime;
     int priority;
     int pid;
-    int valid;//use it for send/recieve
-    int mtype;//use it for send/recieve
+    int valid; //use it for send/recieve
+    int mtype; //use it for send/recieve
+    int sendTime;
     enum processStatus status;
 };
 typedef struct Process Process;
@@ -96,7 +97,7 @@ struct node
     struct node *next;
 };
 typedef struct node node;
-void nodeConstructor(node *n,Process p)
+void nodeConstructor(node *n, Process p)
 {
     n = malloc(sizeof(node));
     n->data = p;
@@ -106,7 +107,7 @@ struct Queue
 {
     //Initialize front and rear
     node *head, *tail;
-    int size;                     // size of the queue
+    int size; // size of the queue
 };
 typedef struct Queue Queue;
 void queueConstructor(Queue *q) // consturctor of the queue
@@ -118,7 +119,7 @@ bool queueIsEmpty(Queue *q) // check if is empty
 {
     return !(q->size);
 }
-void queuePush( Queue *q,  Process p) // push new process
+void queuePush(Queue *q, Process p) // push new process
 {
     q->size++;
     node *temp;
@@ -154,7 +155,6 @@ Process queueTop(Queue *q) // get the process in the top
     return p;
 }
 
-
 //2-Priority Queue
 /*
 priorityQueue * q;
@@ -166,66 +166,66 @@ struct nodeWithPriority
 {
     struct Process data;
     struct nodeWithPriority *next;
-    int priority;//lower value -> high priority
+    int priority; //lower value -> high priority
 };
 typedef struct nodeWithPriority nodeWithPriority;
-nodeWithPriority* newNodeWithPriority(Process p, int pr)
+nodeWithPriority *newNodeWithPriority(Process p, int pr)
 {
-    nodeWithPriority* tmp;
-    tmp->data=p;
-    tmp->next=NULL;
-    tmp->priority=pr;
+    nodeWithPriority *tmp;
+    tmp->data = p;
+    tmp->next = NULL;
+    tmp->priority = pr;
     return tmp;
 }
 struct priorityQueue
 {
-    nodeWithPriority* head;
+    nodeWithPriority *head;
     int size;
 };
 typedef struct priorityQueue priorityQueue;
-void priorityQueueConstructor( priorityQueue *q) // consturctor of the queue
+void priorityQueueConstructor(priorityQueue *q) // consturctor of the queue
 {
     q->head = NULL;
     q->size = 0;
 }
-bool priorityQueueIsEmpty( priorityQueue *q)
+bool priorityQueueIsEmpty(priorityQueue *q)
 {
     return !(q->size);
 }
-void priorityQueuePush(priorityQueue *q,Process p,int pr)
+void priorityQueuePush(priorityQueue *q, Process p, int pr)
 {
-    
-    nodeWithPriority *tmp = newNodeWithPriority(p,pr);
-    if(priorityQueueIsEmpty(q))
-        q->head=tmp;
-    else if(q->head->priority>pr)//the insterd process is best one
+
+    nodeWithPriority *tmp = newNodeWithPriority(p, pr);
+    if (priorityQueueIsEmpty(q))
+        q->head = tmp;
+    else if (q->head->priority > pr) //the insterd process is best one
     {
         tmp->next = q->head;
         q->head = tmp;
     }
     else
     {
-        nodeWithPriority* s = q->head;
-        while(s->next!=NULL&&s->next->priority < pr)
-            s=s->next;
+        nodeWithPriority *s = q->head;
+        while (s->next != NULL && s->next->priority < pr)
+            s = s->next;
         tmp->next = s->next;
-        s->next=tmp;
+        s->next = tmp;
     }
     q->size++;
-
 }
-Process priorityQueuePop(priorityQueue* q)
+Process priorityQueuePop(priorityQueue *q)
 {
     Process p;
-    if(priorityQueueIsEmpty(q))return p;
+    if (priorityQueueIsEmpty(q))
+        return p;
     q->size--;
-    nodeWithPriority * tmp = q->head;
-    q->head=q->head->next;
+    nodeWithPriority *tmp = q->head;
+    q->head = q->head->next;
     p = tmp->data;
     free(tmp);
     return p;
 }
-Process priorityQueueTop(struct priorityQueue* q)
+Process priorityQueueTop(struct priorityQueue *q)
 {
     return q->head->data;
 }
