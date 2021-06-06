@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 {
 
     signal(SIGINT, cleanup);
-    //  initClk();
+    initClk();
     printf("hello i am scheduler...\n");
     FILE *f;
     f = fopen("key", "r");
