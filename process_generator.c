@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
     else if (clkProcess == 0)
     {
         execl("clk.out", "clk", NULL);
+        //exit(0);
     }
 
     int schedulerProcess = fork();

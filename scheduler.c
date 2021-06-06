@@ -118,30 +118,7 @@ void getArrivalProcessAndPushIt()
 {
     while (1)
     {
-        processRecv.valid = 0; //clear prev recv mess
-        processRecv.mtype = 1;
-        int val = msgrcv(msgQ, &processRecv, 100 * sizeof(processRecv), 0, !IPC_NOWAIT);
-        if (val == -1)
-        {
-            perror("Error in Receiving");
-            break;
-        }
-        else
-        {
-            if (processRecv.valid == 1)
-            {
-                countProcess++;
-                printf("Received Process\n");
-                printf("%d %d %d %d RecvTime:%d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority, processRecv.sendTime);
-                //  queuePush(q, processRecv);
-                if (processRecv.id == numOfProcesses)
-                    break;
-            }
-            else
-            {
-                printf("Received a fake Process\n");
-            }
-        }
+        
     }
     return;
 }
@@ -151,24 +128,58 @@ void RR(int quantum)
 
     q = malloc(sizeof(Queue));
     queueConstructor(q);
+    queueIsEmpty(q);
     int cntQuantum = quantum; //conuter for track the quantum of the running Process
     struct Process running;
     *shmId = -1;
+    
     while (1)
     {
         // struct Process p;
         printf("Schuder: hello i am in RR and time %d...\n", getClk());
 
-        if (countProcess < numOfProcesses)
-            getArrivalProcessAndPushIt();
+       
 
+
+        /* revivce process*/ 
+        processRecv.valid = 0; //clear prev recv mess
+        processRecv.mtype = 1;
+        if(countProcess<numOfProcesses)
+        {
+            int val = msgrcv(msgQ, &processRecv, 100 * sizeof(processRecv), 0, !IPC_NOWAIT);
+            if (val == -1)
+            {
+                perror("Error in Receiving");
+                break;
+            }
+            else
+            {
+                if (processRecv.valid == 1)
+                {
+                    countProcess++;
+                    printf("Received Process\n");
+                    printf("%d %d %d %d RecvTime:%d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority, processRecv.sendTime);
+                    queuePush(q, processRecv);
+                    //if (processRecv.id == numOfProcesses)
+                        //break;
+                }
+                else
+                {
+                    printf("Received a fake Process\n");
+                }
+            }
+        }
+        
         if (*shmId == 0) //running process is finish
         {
             finishProcess(running);
             cntQuantum = quantum;
         }
-        if (!queueIsEmpty(q) && (cntQuantum == 0 || *shmId <= 0))
+         
+        printf("%d %d\n",cntQuantum,*shmId);
+        if (!queueIsEmpty(q)&&(cntQuantum == 0 || *shmId <= 0))
         {
+            printf("iam here1\n");
             if (*shmId != -1) //no finish yet
             {
                 running.remningTime = *shmId;
@@ -183,16 +194,15 @@ void RR(int quantum)
             else //first time to run
                 running.pid = startProcess(running);
         }
+        printf("iam here\n");
         cntQuantum--;
-        sleep(1);
         countProcess++;
         // to do : if it last process or the algorithm finish we will out from this loop done
         if (countProcess == numOfProcesses && queueIsEmpty(q) && *shmId <= 0)
             break;
-        // }
-
-        printf("Schuder: hello i finished RR...\n");
+        
     }
+     printf("Schuder: hello i finished RR...\n");
 }
 void cleanup(int signum)
 {

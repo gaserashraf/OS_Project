@@ -112,12 +112,18 @@ struct Queue
 typedef struct Queue Queue;
 void queueConstructor(Queue *q) // consturctor of the queue
 {
+    printf("queue constrctor start\n");
     q->head = q->tail = NULL;
     q->size = 0;
+
+     printf("queue constrctor end\n");
 }
 bool queueIsEmpty(Queue *q) // check if is empty
 {
-    return !(q->size);
+    printf("queue constrctor empty\n");
+    if(q->head==NULL) return false;
+    else return true;
+    //printf("queue constrctor end empty\n");
 }
 void queuePush(Queue *q, Process p) // push new process
 {
