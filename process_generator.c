@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     else if (schedulerProcess == 0)
     {
         printf("hello i will fork scheduler...\n");
-        //system("gcc scheduler.c -o scheduler.out");
+        system("gcc scheduler.c -o scheduler.out");
         /* if (argc > 3)
             execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], NULL);
         else

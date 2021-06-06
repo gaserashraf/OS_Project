@@ -63,13 +63,13 @@ int getClk()
 void initClk()
 {
     printf("Clock Starting...\n");
-    int shmid = shmget(SHKEY, 4, 0444);
+    int shmid = shmget(SHKEY, 4, IPC_CREAT | 0644);
     while ((long)shmid == -1)
     {
         //Make sure that the clock exists
         printf("Wait! The clock not initialized yet!\n");
         sleep(1);
-        shmid = shmget(SHKEY, 4, 0444);
+        shmid = shmget(SHKEY, 4, IPC_CREAT | 0644);
     }
     shmaddr = (int *)shmat(shmid, (void *)0, 0);
 }
