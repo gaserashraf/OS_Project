@@ -9,7 +9,7 @@ struct Process *processes;
 #define n 2
 int main(int argc, char *argv[])
 {
-    // signal(SIGINT, clearResources);
+    signal(SIGINT, clearResources);
     char *fileName;
     int chosenAlgorithm;
     int processParam = -1;
@@ -132,8 +132,9 @@ int main(int argc, char *argv[])
 
 void clearResources(int signum)
 {
-    printf("Terminate msgQ from generator\n");
-    msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
-    destroyClk(false);
-    //TODO Clears all resources in case of interruption
+    //printf("Terminate msgQ from generator\n");
+    //msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
+    destroyClk(true);
+    kill(getpid(), SIGKILL);
+    //signal(SIGINT, clearResources);
 }

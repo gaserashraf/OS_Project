@@ -17,6 +17,7 @@ void SJF();
 void HPF();
 void SRTN();
 void getArrivalProcessAndPushIt();
+void clearResources(int signum);
 void RR(int quantum);
 
 struct Queue *q;
@@ -28,6 +29,7 @@ int msgQ;
 int *shmId; //for the running process
 int main(int argc, char *argv[])
 {
+    signal(SIGINT, clearResources);
     //  initClk();
     FILE *f;
     f = fopen("key", "r");
@@ -56,6 +58,13 @@ int main(int argc, char *argv[])
     printf("Terminate msgQ from Scheduler\n");
     msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(true);
+}
+void clearResources(int signum)
+{
+    //printf("Terminate msgQ from scheduler\n");
+    msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
+    destroyClk(false);
+    // signal(SIGINT, clearResources);
 }
 /*int startProcess(Process p)
 {
