@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
         processes[numOfProcesses].runTime = c;
         processes[numOfProcesses].remningTime = c;
         processes[numOfProcesses].priority = d;
+        processes[numOfProcesses].waitingTime = -1;
         numOfProcesses++;
     }
     char numProcesses[500];

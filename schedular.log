@@ -7,3 +7,4 @@ at time 5 process 1 started arrive time 3 running time 4 remning time 4 waiting 
 at time 9 process 1 finished arrive time 3 running time 4 remning time 0 waiting time 6
 at time 9 process 3 started arrive time 5 running time 5 remning time 5 waiting time 4
 at time 13 process 3 finished arrive time 5 running time 5 remning time 0 waiting time 8
+
