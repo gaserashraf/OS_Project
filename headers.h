@@ -99,8 +99,15 @@ struct node
 typedef struct node node;
 void nodeConstructor(node *n, Process p)
 {
-    n = malloc(sizeof(node));
-    n->data = p;
+    n->data.id = p.id;
+    n->data.arrivalTime = p.arrivalTime;
+    n->data.runTime = p.runTime;
+    p.remningTime = p.runTime;
+    n->data.remningTime = p.remningTime;
+    n->data.valid = p.valid;
+    n->data.status = p.status;
+    n->data.priority = p.priority;
+    n->data.pid = p.pid;
     n->next = NULL;
 }
 struct Queue
@@ -112,23 +119,23 @@ struct Queue
 typedef struct Queue Queue;
 void queueConstructor(Queue *q) // consturctor of the queue
 {
-    printf("queue constrctor start\n");
     q->head = q->tail = NULL;
     q->size = 0;
-
-     printf("queue constrctor end\n");
 }
 bool queueIsEmpty(Queue *q) // check if is empty
 {
-    printf("queue constrctor empty\n");
-    if(q->head==NULL) return false;
-    else return true;
+    if (q->head == NULL)
+    {
+        return true;
+    }
+    else
+        return false;
     //printf("queue constrctor end empty\n");
 }
 void queuePush(Queue *q, Process p) // push new process
 {
-    q->size++;
-    node *temp;
+    node *temp = (node *)malloc(sizeof(node));
+    q->size = q->size + 1;
     nodeConstructor(temp, p);
     if (queueIsEmpty(q))
     {
@@ -142,13 +149,18 @@ void queuePush(Queue *q, Process p) // push new process
 }
 Process queuePop(Queue *q) // pop the process in the top
 {
-    Process p;
+    Process p = {.id = -1};
     if (queueIsEmpty(q))
+    {
         return p;
+    }
     node *temp = q->tail;
     q->tail = q->tail->next;
     p = temp->data;
     free(temp);
+    q->size = q->size - 1;
+    if (q->head != NULL)
+        q->head = q->head->next;
     return p;
 }
 Process queueTop(Queue *q) // get the process in the top

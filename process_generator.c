@@ -142,12 +142,10 @@ int main(int argc, char *argv[])
             i++;
         }
     }
-    while (1)
-    {
-        ;
-    }
+
     // TODO Generation Main Loop
     // 7. Clear clock resources
+    sleep(10000);
     destroyClk(false);
 }
 

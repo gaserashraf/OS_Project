@@ -20,7 +20,7 @@ void getArrivalProcessAndPushIt();
 void clearResources(int signum);
 void RR(int quantum);
 void cleanup(int signum);
-struct Queue *q;
+struct Queue *q = NULL;
 struct Process processRecv;
 int chosenAlgorithm, paramter = -1, numOfProcesses = 4;
 bool lastProcess = 0;
@@ -83,12 +83,13 @@ int startProcess(Process p)
     p.pid = fork();
     if (p.pid == 0)
     {
+        p.pid = getpid();
         system("gcc process.c -o process.out");
         execl("./process.out", "process", NULL);
     }
     int waitingTime = getClk() - p.arrivalTime;
-    printf("at time %d process %d started arrive time %d running time %d remning time %d waiting time %d", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
-    return p.id;
+    printf("at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    return p.pid;
 }
 void continueProcess(Process p)
 {
@@ -96,7 +97,7 @@ void continueProcess(Process p)
     // to do print the log
     kill(p.pid, SIGCONT);
     int waitingTime = getClk() - p.arrivalTime;
-    printf("at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    printf("at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 void stopProcess(Process p)
 {
@@ -105,46 +106,32 @@ void stopProcess(Process p)
     *shmId = -1;
     kill(p.pid, SIGSTOP);
     int waitingTime = getClk() - p.arrivalTime;
-    printf("at time %d process %d stoped arrive time %d running time %d remning time %d waiting time %d", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    printf("at time %d process %d stoped arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 void finishProcess(Process p)
 {
     // to do : clac waiting , fininsh time..............
     // to do print the log
     int waitingTime = getClk() - p.arrivalTime;
-    printf("at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    printf("at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
-void getArrivalProcessAndPushIt()
-{
-    while (1)
-    {
-        
-    }
-    return;
-}
+
 void RR(int quantum)
 {
-    printf("Schuder: hello i started RR...\n");
 
-    q = malloc(sizeof(Queue));
+    q = (Queue *)malloc(sizeof(Queue));
     queueConstructor(q);
-    queueIsEmpty(q);
     int cntQuantum = quantum; //conuter for track the quantum of the running Process
     struct Process running;
     *shmId = -1;
-    
+
     while (1)
     {
         // struct Process p;
-        printf("Schuder: hello i am in RR and time %d...\n", getClk());
-
-       
-
-
-        /* revivce process*/ 
+        /* revivce process*/
         processRecv.valid = 0; //clear prev recv mess
         processRecv.mtype = 1;
-        if(countProcess<numOfProcesses)
+        if (countProcess < numOfProcesses)
         {
             int val = msgrcv(msgQ, &processRecv, 100 * sizeof(processRecv), 0, !IPC_NOWAIT);
             if (val == -1)
@@ -157,29 +144,27 @@ void RR(int quantum)
                 if (processRecv.valid == 1)
                 {
                     countProcess++;
-                    printf("Received Process\n");
                     printf("%d %d %d %d RecvTime:%d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority, processRecv.sendTime);
                     queuePush(q, processRecv);
                     //if (processRecv.id == numOfProcesses)
-                        //break;
+                    //break;
                 }
                 else
                 {
                     printf("Received a fake Process\n");
+                    continue;
                 }
             }
         }
-        
+
         if (*shmId == 0) //running process is finish
         {
             finishProcess(running);
             cntQuantum = quantum;
         }
-         
-        printf("%d %d\n",cntQuantum,*shmId);
-        if (!queueIsEmpty(q)&&(cntQuantum == 0 || *shmId <= 0))
+
+        if (q != NULL && !queueIsEmpty(q) && (cntQuantum == 0 || *shmId <= 0))
         {
-            printf("iam here1\n");
             if (*shmId != -1) //no finish yet
             {
                 running.remningTime = *shmId;
@@ -187,26 +172,36 @@ void RR(int quantum)
                 stopProcess(running);
             }
             struct Process front = queuePop(q);
-            *shmId = front.remningTime + 1;
-            running = front;
-            if (front.remningTime < front.runTime) // it's contiue
-                continueProcess(running);
-            else //first time to run
-                running.pid = startProcess(running);
+            if (front.id != -1)
+            {
+                *shmId = front.remningTime - 1;
+                running = front;
+                if (front.remningTime < front.runTime) // it's contiue
+                {
+                    continueProcess(running);
+                }
+                else //first time to run
+                {
+                    running.pid = startProcess(running);
+                }
+            }
+            else
+            {
+                printf("Queue is empty\n");
+            }
         }
-        printf("iam here\n");
         cntQuantum--;
         countProcess++;
         // to do : if it last process or the algorithm finish we will out from this loop done
         if (countProcess == numOfProcesses && queueIsEmpty(q) && *shmId <= 0)
             break;
-        
     }
-     printf("Schuder: hello i finished RR...\n");
+    printf("Schuder: hello i finished RR...\n");
 }
 void cleanup(int signum)
 {
     printf("Terminate shared memory from scheduler\n");
     shmctl(shmid, IPC_RMID, NULL);
+    shmctl(msgQ, IPC_RMID, NULL);
     kill(getpid(), SIGKILL);
 }
