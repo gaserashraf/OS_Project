@@ -43,6 +43,7 @@ struct Process
     int valid; //use it for send/recieve
     int mtype; //use it for send/recieve
     int sendTime;
+    int waitingTime;
     enum processStatus status;
 };
 typedef struct Process Process;

@@ -94,8 +94,9 @@ int startProcess(Process p)
         //system("gcc process.c -o process.out");
         execl("./process.out", "process", NULL);
     }
-    int waitingTime = getClk() - p.arrivalTime;
-    fprintf(schedulerLog,"at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    
+    p.waitingTime=getClk()-p.arrivalTime;
+    fprintf(schedulerLog,"at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     //printf("at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
     return p.pid;
 }
@@ -104,8 +105,7 @@ void continueProcess(Process p)
     // to do : sigcont(p.pid)
     // to do print the log
     kill(p.pid, SIGCONT);
-    int waitingTime = getClk() - p.arrivalTime;
-    fprintf(schedulerLog,"at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    fprintf(schedulerLog,"at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     //printf("at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 void stopProcess(Process p)
@@ -113,16 +113,15 @@ void stopProcess(Process p)
     // to do : sigstop(p.pid)
     // to do print the log
     kill(p.pid, SIGSTOP);
-    int waitingTime = getClk() - p.arrivalTime;
-    fprintf(schedulerLog,"at time %d process %d stoped arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    fprintf(schedulerLog,"at time %d process %d stoped arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     //printf("at time %d process %d stop arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 void finishProcess(Process p)
 {
     // to do : clac waiting , fininsh time..............
     // to do print the log
-    int waitingTime = getClk() - p.arrivalTime;
-    fprintf(schedulerLog,"at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    double WTA = (getClk()-p.arrivalTime) * 1.0 / p.runTime;
+    fprintf(schedulerLog,"at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d TA %d WTA %.2f\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime, getClk() - p.arrivalTime, WTA);
     //printf("at time %d process %d finish arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 
@@ -133,25 +132,25 @@ void RR(int quantum)
     queueConstructor(q);
     int cntQuantum = quantum; //conuter for track the quantum of the running Process
     struct Process running;
-    *shmId = -1;
+    *shmId = 0;
     bool isProcessRunNow=0;
     int timeWillEndHisQuantum=0;
     while (1)
     {
-        
-
-        if (isProcessRunNow && *shmId <= 0) //running process is finish
+        /*if (isProcessRunNow && *shmId <= 0) //running process is finish
         {
             printf("Sche : finish process\n");
-             running.remningTime = 0;
+            running.remningTime = 0;
             finishProcess(running);
             isProcessRunNow = 0;
-        }
+        }*/
         if (isProcessRunNow && timeWillEndHisQuantum <= getClk()) //no finish yet(stop it and push it pack to queue)
         {
             printf("Sche : stop process\n");
             running.remningTime -= quantum;
+            
             if(running.remningTime<=0){
+                running.remningTime=0;
                 finishProcess(running);
             }
             else{
@@ -160,12 +159,12 @@ void RR(int quantum)
             }
             isProcessRunNow = 0;
         }
-        if (!queueIsEmpty(q) && !isProcessRunNow ) //pick front of the q
+        if (!queueIsEmpty(q) && !isProcessRunNow) //pick front of the q
         {
             printf("Sche : pick process\n");
             running = queuePop(q);
-            *shmId = running.remningTime;
-            timeWillEndHisQuantum = min(getClk() + quantum, getClk() + running.remningTime);
+            *shmId = running.remningTime + 1;
+            timeWillEndHisQuantum = min(getClk() + quantum, getClk()+running.remningTime);
             isProcessRunNow = 1;
             if (running.remningTime < running.runTime) // it's contiue
             {
@@ -175,14 +174,15 @@ void RR(int quantum)
             else //first time to run
             {
                 printf("Sche : start process will stop at %d\n",timeWillEndHisQuantum);
+                running.waitingTime = getClk() - running.arrivalTime;
                 running.pid = startProcess(running);
             }
         }
-        if(isProcessRunNow)
+       /* if(isProcessRunNow)
         {
             printf("\nSche : running  id %d remning time %d curr time %d qunStop time %d\n", running.id,(*shmId),getClk(),timeWillEndHisQuantum);
             printQueue(q);
-        }
+        }*/
 
         // struct Process p;
         /* revivce process*/
@@ -282,6 +282,7 @@ void FCFS()
             *shmId = front.remningTime;
             running = front;
             isProcessRunNow=1;
+            running.waitingTime = getClk() - running.arrivalTime;
             running.pid = startProcess(running);
         }
         // to do : if it last process or the algorithm finish we will out from this loop done
@@ -350,6 +351,7 @@ void SJF() //smallest running time first
             *shmId = front.remningTime;
             running = front;
             isProcessRunNow=1;
+            running.waitingTime = getClk() - running.arrivalTime;
             running.pid = startProcess(running);
         }
         // to do : if it last process or the algorithm finish we will out from this loop done
