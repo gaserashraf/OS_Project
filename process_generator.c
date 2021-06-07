@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         processes[i].valid = false;
         if (temp > getClk())
         {
-            sleep(1);
+            //sleep(1);
             printf("%d\n", getClk());
             int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
             if (val == -1)
