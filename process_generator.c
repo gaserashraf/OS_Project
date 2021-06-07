@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
         processes[numOfProcesses].id = a;
         processes[numOfProcesses].arrivalTime = b;
         processes[numOfProcesses].runTime = c;
+        processes[numOfProcesses].remningTime = c;
         processes[numOfProcesses].priority = d;
         numOfProcesses++;
     }

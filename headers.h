@@ -102,7 +102,7 @@ void nodeConstructor(node *n, Process p)
     n->data.id = p.id;
     n->data.arrivalTime = p.arrivalTime;
     n->data.runTime = p.runTime;
-    p.remningTime = p.runTime;
+    p.remningTime = p.remningTime;
     n->data.remningTime = p.remningTime;
     n->data.valid = p.valid;
     n->data.status = p.status;
@@ -124,12 +124,9 @@ void queueConstructor(Queue *q) // consturctor of the queue
 }
 bool queueIsEmpty(Queue *q) // check if is empty
 {
-    if (q->head == NULL)
-    {
-        return true;
-    }
-    else
-        return false;
+    if(q==NULL||q->head==NULL)return true;
+    return false;
+    //return !(q->size);
     //printf("queue constrctor end empty\n");
 }
 void queuePush(Queue *q, Process p) // push new process
@@ -159,8 +156,7 @@ Process queuePop(Queue *q) // pop the process in the top
     p = temp->data;
     free(temp);
     q->size = q->size - 1;
-    if (q->head != NULL)
-        q->head = q->head->next;
+    if(q->tail==NULL)q->head=NULL;
     return p;
 }
 Process queueTop(Queue *q) // get the process in the top
@@ -172,7 +168,17 @@ Process queueTop(Queue *q) // get the process in the top
     p = temp->data;
     return p;
 }
-
+void printQueue(Queue *q)
+{
+    node *temp =q->tail;
+    while(temp!=NULL)
+    {
+        printf("id %d ,",temp->data.id);
+        temp =temp->next;
+    }
+    printf("\n");
+    
+}
 //2-Priority Queue
 /*
 priorityQueue * q;
@@ -182,18 +188,24 @@ priorityQueuePush(q,p,pr);
 */
 struct nodeWithPriority
 {
-    struct Process data;
+    Process data;
     struct nodeWithPriority *next;
     int priority; //lower value -> high priority
 };
 typedef struct nodeWithPriority nodeWithPriority;
-nodeWithPriority *newNodeWithPriority(Process p, int pr)
+void newNodeWithPriority(nodeWithPriority *n,Process p, int pr)
 {
-    nodeWithPriority *tmp;
-    tmp->data = p;
-    tmp->next = NULL;
-    tmp->priority = pr;
-    return tmp;
+    n->data.id = p.id;
+    n->data.arrivalTime = p.arrivalTime;
+    n->data.runTime = p.runTime;
+    p.remningTime = p.remningTime;
+    n->data.remningTime = p.remningTime;
+    n->data.valid = p.valid;
+    n->data.status = p.status;
+    n->data.priority = p.priority;
+    n->data.pid = p.pid;
+    n->next = NULL;
+    n->priority = pr;
 }
 struct priorityQueue
 {
@@ -208,12 +220,15 @@ void priorityQueueConstructor(priorityQueue *q) // consturctor of the queue
 }
 bool priorityQueueIsEmpty(priorityQueue *q)
 {
-    return !(q->size);
+    if(q==NULL||q->head==NULL)return true;
+    return false;
 }
 void priorityQueuePush(priorityQueue *q, Process p, int pr)
 {
-
-    nodeWithPriority *tmp = newNodeWithPriority(p, pr);
+    
+    nodeWithPriority *tmp = (nodeWithPriority *)malloc(sizeof(nodeWithPriority));
+    newNodeWithPriority(tmp,p, pr);
+   
     if (priorityQueueIsEmpty(q))
         q->head = tmp;
     else if (q->head->priority > pr) //the insterd process is best one
@@ -229,6 +244,7 @@ void priorityQueuePush(priorityQueue *q, Process p, int pr)
         tmp->next = s->next;
         s->next = tmp;
     }
+    
     q->size++;
 }
 Process priorityQueuePop(priorityQueue *q)
@@ -243,7 +259,24 @@ Process priorityQueuePop(priorityQueue *q)
     free(tmp);
     return p;
 }
-Process priorityQueueTop(struct priorityQueue *q)
+Process priorityQueueTop(priorityQueue *q)
 {
     return q->head->data;
+}
+void printPriorityQueue(priorityQueue *q)
+{
+    nodeWithPriority *temp =q->head;
+    while(temp!=NULL)
+    {
+        printf("id %d ,",temp->data.id);
+        temp =temp->next;
+    }
+    printf("\n");
+}
+
+
+int min(int a, int b)
+{
+    if(a<b)return a;
+    return b;
 }
