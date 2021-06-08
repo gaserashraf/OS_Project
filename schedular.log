@@ -1,15 +1,11 @@
 at time x process y started arrive time w running time z remning time y waiting time k
-at time 8 process 1 started arrive time 7 running time 14 remning time 14 waiting time 1
-at time 15 process 1 stoped arrive time 7 running time 14 remning time 6 waiting time 0
-at time 15 process 2 started arrive time 15 running time 11 remning time 11 waiting time 0
-at time 19 process 2 stoped arrive time 15 running time 11 remning time 6 waiting time 0
-at time 19 process 3 started arrive time 19 running time 21 remning time 21 waiting time 0
-at time 39 process 3 finished arrive time 19 running time 21 remning time 0 waiting time 0 TA 20 WTA 0.95
-at time 39 process 5 started arrive time 24 running time 1 remning time 1 waiting time 15
-at time 39 process 5 finished arrive time 24 running time 1 remning time 0 waiting time 0 TA 15 WTA 15.00
-at time 39 process 2 continued arrive time 15 running time 11 remning time 6 waiting time 39
-at time 44 process 2 finished arrive time 15 running time 11 remning time 0 waiting time 0 TA 29 WTA 2.64
-at time 44 process 4 started arrive time 24 running time 29 remning time 29 waiting time 20
-at time 72 process 4 finished arrive time 24 running time 29 remning time 0 waiting time 0 TA 48 WTA 1.66
-at time 72 process 1 continued arrive time 7 running time 14 remning time 6 waiting time 72
-at time 77 process 1 finished arrive time 7 running time 14 remning time 0 waiting time 0 TA 70 WTA 5.00
+at time 7 process 1 started arrive time 7 running time 14 remning time 14 waiting time 0
+at time 21 process 1 finished arrive time 7 running time 14 remning time 0 waiting time 0 TA 14 WTA 1.00
+at time 21 process 2 started arrive time 15 running time 11 remning time 11 waiting time 6
+at time 32 process 2 finished arrive time 15 running time 11 remning time 0 waiting time 6 TA 17 WTA 1.55
+at time 32 process 5 started arrive time 24 running time 1 remning time 1 waiting time 8
+at time 33 process 5 finished arrive time 24 running time 1 remning time 0 waiting time 8 TA 9 WTA 9.00
+at time 33 process 3 started arrive time 19 running time 21 remning time 21 waiting time 14
+at time 54 process 3 finished arrive time 19 running time 21 remning time 0 waiting time 14 TA 35 WTA 1.67
+at time 54 process 4 started arrive time 24 running time 29 remning time 29 waiting time 30
+at time 83 process 4 finished arrive time 24 running time 29 remning time 0 waiting time 30 TA 59 WTA 2.03

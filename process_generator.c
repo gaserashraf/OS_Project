@@ -119,13 +119,16 @@ int main(int argc, char *argv[])
     // 4. Use this function after creating the clock Process to initialize clock.
     initClk();
     int i = 0;
+    int time = -1;
     while (i < numOfProcesses)
     {
         int temp = processes[i].arrivalTime;
         processes[i].valid = false;
+        while (time == getClk())
+            ;
+        time = getClk();
         if (temp > getClk())
         {
-            sleep(1);
             printf("%d\n", getClk());
             int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
             if (val == -1)
@@ -134,13 +137,17 @@ int main(int argc, char *argv[])
         else
         {
             // 6. Send the information to the scheduler at the appropriate time.
-            processes[i].valid = true;
-            processes[i].sendTime = temp;
-            printf("Sending Process#%d\n", i);
-            int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
-            if (val == -1)
-                printf("Errror in send Process#%d\n", i);
-            i++;
+            while (temp == getClk())
+            {
+                processes[i].valid = true;
+                processes[i].sendTime = temp;
+                printf("Sending Process#%d\n", i);
+                int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
+                if (val == -1)
+                    printf("Errror in send Process#%d\n", i);
+                i++;
+                temp = processes[i].arrivalTime;
+            }
         }
     }
 
@@ -153,7 +160,9 @@ int main(int argc, char *argv[])
         temp.mtype = 1;
         temp.valid = false;
         int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
-        sleep(1);
+        while (time == getClk())
+            ;
+        time = getClk();
     }
     destroyClk(false);
 }
