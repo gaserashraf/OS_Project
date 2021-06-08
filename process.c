@@ -24,7 +24,7 @@ int main(int agrc, char *argv[])
             ;
         if (prevTime != getClk())
         {
-            //printf("hello iam process.c i will decrese 1 sec from shmid %d\n",*shmId);
+            //   printf("hello iam process.c i will decrese 1 sec from shmid %d\n", *shmId);
             (*shmId)--;
             prevTime = getClk();
         }

@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
         processes[numOfProcesses].runTime = c;
         processes[numOfProcesses].remningTime = c;
         processes[numOfProcesses].priority = d;
-        processes[numOfProcesses].waitingTime = -1;
         numOfProcesses++;
     }
     char numProcesses[500];
@@ -126,7 +125,7 @@ int main(int argc, char *argv[])
         processes[i].valid = false;
         if (temp > getClk())
         {
-            //sleep(1);
+            sleep(1);
             printf("%d\n", getClk());
             int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
             if (val == -1)
@@ -147,7 +146,15 @@ int main(int argc, char *argv[])
 
     // TODO Generation Main Loop
     // 7. Clear clock resources
-    sleep(10000);
+    while (1)
+    {
+        printf("Here");
+        Process temp;
+        temp.mtype = 1;
+        temp.valid = false;
+        int val = msgsnd(msgQ, &processes[i], sizeof(processes[i]), !IPC_NOWAIT);
+        sleep(1);
+    }
     destroyClk(false);
 }
 
