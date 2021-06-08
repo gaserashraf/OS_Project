@@ -74,10 +74,10 @@ int main(int argc, char *argv[])
     }
     shmId = (int *)shmat(shmid, (void *)0, 0);
 
-    // FCFS();
-    // SRTN();
-    SJF();
-    //RR(5);
+    //FCFS();
+    //SRTN();
+    // SJF();
+    // RR(5);
     //HPF();
     printf("Terminate msgQ from Scheduler\n");
     fclose(schedulerLog);
@@ -445,7 +445,12 @@ void SRTN()
         }
         if (!priorityQueueIsEmpty(pq) && isProcessRunNow && *shmId > pq->head->data.remningTime) //no finish yet(stop it and push it pack to queue)
         {
-            running.remningTime = *shmId;
+            if (running.remningTime >= running.runTime)
+            {
+                running.remningTime = *shmId - 1;
+            }
+            else
+                running.remningTime = *shmId;
             priorityQueuePush(pq, running, running.remningTime);
             stopProcess(running);
             isProcessRunNow = 0;
@@ -498,7 +503,7 @@ void HPF()
                     processRecv.remningTime = processRecv.runTime;
                     printf("%d %d %d %d RecvTime:%d\n", processRecv.id, processRecv.arrivalTime, processRecv.runTime, processRecv.priority, getClk());
                     priorityQueuePush(pq, processRecv, processRecv.priority);
-                    printPriorityQueue(pq);
+                    // printPriorityQueue(pq);
                 }
                 else
                 {
@@ -513,7 +518,18 @@ void HPF()
             finishProcess(running);
             isProcessRunNow = 0;
         }
-
+        if (!priorityQueueIsEmpty(pq) && isProcessRunNow && running.priority > pq->head->data.priority) //no finish yet(stop it and push it pack to queue)
+        {
+            if (running.remningTime >= running.runTime)
+            {
+                running.remningTime = *shmId - 1;
+            }
+            else
+                running.remningTime = *shmId;
+            priorityQueuePush(pq, running, running.priority);
+            stopProcess(running);
+            isProcessRunNow = 0;
+        }
         if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
         {
             if (pq->head->data.remningTime < pq->head->data.runTime)
@@ -534,13 +550,6 @@ void HPF()
                 isProcessRunNow = 1;
                 running.pid = startProcess(running);
             }
-        }
-        if (!priorityQueueIsEmpty(pq) && isProcessRunNow && running.priority > pq->head->data.priority) //no finish yet(stop it and push it pack to queue)
-        {
-            running.remningTime = *shmId;
-            priorityQueuePush(pq, running, running.priority);
-            stopProcess(running);
-            isProcessRunNow = 0;
         }
 
         /* while (time == getClk())
