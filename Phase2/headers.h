@@ -45,6 +45,7 @@ struct Process
     int sendTime;
     int waitingTime;
     int stopTime;
+    int memSize;
     enum processStatus status;
 };
 typedef struct Process Process;

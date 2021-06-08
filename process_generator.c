@@ -6,8 +6,6 @@ void clearResources(int);
 
 int msgQ;
 struct Process *processes;
-#define n 2
-
 int *shmIdTerm, shmidterm; //for the running process
 int main(int argc, char *argv[])
 {
@@ -50,19 +48,18 @@ int main(int argc, char *argv[])
         perror("Error While reading processes.txt file\n");
         exit(-1);
     }
-    int a, b, c, d, f;
+    int a, b, c, d;
     //TODO: Change this method to skip first line
-    char q[10], w[10], e[10], r[10], t[10];
-    fscanf(processesInput, "%s %s %s %s %s", q, w, e, r, t);
+    char q[10], w[10], e[10], r[10];
+    fscanf(processesInput, "%s %s %s %s", q, w, e, r);
     int numOfProcesses = 0;
-    while (fscanf(processesInput, "%d %d %d %d %d", &a, &b, &c, &d, &f) != -1)
+    while (fscanf(processesInput, "%d %d %d %d", &a, &b, &c, &d) != -1)
     {
         processes[numOfProcesses].id = a;
         processes[numOfProcesses].arrivalTime = b;
         processes[numOfProcesses].runTime = c;
         processes[numOfProcesses].remningTime = c;
         processes[numOfProcesses].priority = d;
-        processes[numOfProcesses].memSize = f;
         numOfProcesses++;
     }
     char numProcesses[500];
@@ -153,8 +150,10 @@ int main(int argc, char *argv[])
     }
 
     // TODO Generation Main Loop
+    // 7. Clear clock resources
     while (1)
     {
+        printf("Here");
         Process temp;
         temp.mtype = 1;
         temp.valid = false;
@@ -163,14 +162,13 @@ int main(int argc, char *argv[])
             ;
         time = getClk();
     }
-    msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(false);
 }
 
 void clearResources(int signum)
 {
     //printf("Terminate msgQ from generator\n");
-    msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
+    //msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(true);
     kill(getpid(), SIGKILL);
     //signal(SIGINT, clearResources);
