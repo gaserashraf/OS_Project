@@ -23,7 +23,7 @@ void cleanup(int signum);
 struct Queue *q = NULL;
 struct priorityQueue *pq = NULL;
 struct Process processRecv;
-int chosenAlgorithm, paramter = -1, numOfProcesses = 5;
+int chosenAlgorithm, paramter = -1, numOfProcesses = 10;
 bool lastProcess = 0;
 int msgQ;
 
@@ -74,11 +74,11 @@ int main(int argc, char *argv[])
     }
     shmId = (int *)shmat(shmid, (void *)0, 0);
 
-    //FCFS();
-    //SRTN();
+    // FCFS();
+    SRTN();
     // SJF();
     // RR(5);
-    //HPF();
+    // HPF();
     printf("Terminate msgQ from Scheduler\n");
     fclose(schedulerLog);
     msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
@@ -121,7 +121,7 @@ void stopProcess(Process p)
     kill(p.pid, SIGSTOP);
     p.stopTime = getClk();
     fprintf(schedulerLog, "at time %d process %d stoped arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
-    //printf("at time %d process %d stop arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
+    //  printf("at time %d process %d stop arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
 void finishProcess(Process p)
 {
@@ -422,6 +422,19 @@ void SRTN()
             isProcessRunNow = 0;
         }
 
+        if (!priorityQueueIsEmpty(pq) && isProcessRunNow && *shmId > pq->head->data.remningTime) //no finish yet(stop it and push it pack to queue)
+        {
+            if (*shmId >= running.runTime)
+            {
+                printf("%d d7ko\n", running.id);
+                running.remningTime = *shmId - 1;
+            }
+            else
+                running.remningTime = *shmId;
+            priorityQueuePush(pq, running, running.remningTime);
+            stopProcess(running);
+            isProcessRunNow = 0;
+        }
         if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
         {
             if (pq->head->data.remningTime < pq->head->data.runTime)
@@ -443,19 +456,6 @@ void SRTN()
                 running.pid = startProcess(running);
             }
         }
-        if (!priorityQueueIsEmpty(pq) && isProcessRunNow && *shmId > pq->head->data.remningTime) //no finish yet(stop it and push it pack to queue)
-        {
-            if (running.remningTime >= running.runTime)
-            {
-                running.remningTime = *shmId - 1;
-            }
-            else
-                running.remningTime = *shmId;
-            priorityQueuePush(pq, running, running.remningTime);
-            stopProcess(running);
-            isProcessRunNow = 0;
-        }
-
         /* while (time == getClk())
             ;
         time = getClk();*/
