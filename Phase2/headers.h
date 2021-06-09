@@ -214,6 +214,9 @@ void newNodeWithPriority(nodeWithPriority *n, Process p, int pr)
     n->data.status = p.status;
     n->data.priority = p.priority;
     n->data.pid = p.pid;
+    n->data.memSize = p.memSize;
+    n->data.startIndex = p.startIndex;
+    n->data.endIndex = p.endIndex;
     n->next = NULL;
     n->priority = pr;
 }

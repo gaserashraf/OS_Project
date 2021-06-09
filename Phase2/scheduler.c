@@ -118,11 +118,11 @@ int main(int argc, char *argv[])
     }
     shmId = (int *)shmat(shmid, (void *)0, 0);
 
-    FCFS();
-    //SRTN();
+    //  FCFS();
+    // SRTN();
     // SJF();
     // RR(5);
-    //HPF();
+    HPF();
     printf("Terminate msgQ from Scheduler\n");
     fclose(MemoryLog);
     fclose(schedulerLog);
@@ -155,7 +155,7 @@ void continueProcess(Process p)
     // to do : sigcont(p.pid)
     // to do print the log
     kill(p.pid, SIGCONT);
-    p.waitingTime += getClk() - p.stopTime;
+    //  p.waitingTime += getClk() - p.stopTime;
     printf("at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     fprintf(schedulerLog, "at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     //printf("at time %d process %d continued arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
@@ -176,8 +176,18 @@ void finishProcess(Process p)
     double WTA = (getClk() - p.arrivalTime) * 1.0 / p.runTime;
     p.remningTime = 0;
     *shmId = -1;
+    switch (chosenPolicy)
+    {
+    case 1:
+        firstFitDeallocate(&p);
+        break;
+    case 2:
+        nextfitdeallocatingmem(&p);
+        break;
+    default:
+        break;
+    }
     fprintf(MemoryLog, "at time %d Deallocated %d bytes for process %d from %d to %d\n", getClk(), p.memSize, p.id, p.startIndex, p.endIndex);
-    nextfitdeallocatingmem(&p);
     flag = 0;
     node *temp = waitList->head;
     while (temp != NULL)
@@ -208,7 +218,7 @@ void RR(int quantum)
     int cntQuantum = quantum; //conuter for track the quantum of the running Process
     struct Process running;
     *shmId = 0;
-    bool isProcessRunNow = 0;
+    isProcessRunNow = 0;
     int timeWillEndHisQuantum = 0;
     while (1)
     {
@@ -236,30 +246,71 @@ void RR(int quantum)
             }
             isProcessRunNow = 0;
         }
-        if (!queueIsEmpty(q) && !isProcessRunNow) //pick front of the q
+
+        switch (chosenPolicy)
         {
-            printf("Sche : pick process\n");
-            running = queuePop(q);
-            *shmId = running.remningTime + 1;
-            timeWillEndHisQuantum = min(getClk() + quantum, getClk() + running.remningTime);
-            isProcessRunNow = 1;
-            if (running.remningTime < running.runTime) // it's contiue
+        case 1:
+            if (firstfit())
             {
-                printf("Sche : continue process\n");
-                continueProcess(running);
+                printf("kaaaaaaaaaaaaak\n");
+                isProcessRunNow = 1;
             }
-            else //first time to run
+            if (!queueIsEmpty(q) && !isProcessRunNow) //pick front of the q
             {
-                printf("Sche : start process will stop at %d\n", timeWillEndHisQuantum);
-                running.waitingTime = getClk() - running.arrivalTime;
-                running.pid = startProcess(running);
+                printf("Sche : pick process\n");
+                running = queuePop(q);
+                *shmId = running.remningTime + 1;
+                timeWillEndHisQuantum = min(getClk() + quantum, getClk() + running.remningTime);
+                isProcessRunNow = 1;
+                if (running.remningTime < running.runTime) // it's contiue
+                {
+                    printf("Sche : continue process\n");
+                    continueProcess(running);
+                }
+                else //first time to run
+                {
+                    printf("Sche : start process will stop at %d\n", timeWillEndHisQuantum);
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
             }
+            break;
+        case 2:
+            if (nextfit())
+                isProcessRunNow = 1;
+            if (!queueIsEmpty(q) && !isProcessRunNow) //pick front of the q
+            {
+                printf("Sche : pick process\n");
+                running = queuePop(q);
+                *shmId = running.remningTime + 1;
+                timeWillEndHisQuantum = min(getClk() + quantum, getClk() + running.remningTime);
+                isProcessRunNow = 1;
+                if (running.remningTime < running.runTime) // it's contiue
+                {
+                    printf("Sche : continue process\n");
+                    continueProcess(running);
+                }
+                else //first time to run
+                {
+                    printf("Sche : start process will stop at %d\n", timeWillEndHisQuantum);
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
+            }
+            break;
+        default:
+            break;
         }
-        /* if(isProcessRunNow)
-        {
-            printf("\nSche : running  id %d remning time %d curr time %d qunStop time %d\n", running.id, (*shmId), getClk(), timeWillEndHisQuantum);
-            printQueue(q);
-        }*/
 
         // struct Process p;
         /* revivce process*/
@@ -400,22 +451,6 @@ void FCFS()
             break;
         }
 
-        /*if (!queueIsEmpty(q) && !isProcessRunNow)
-        {
-            printf("FCFS : i will pick process now\n");
-            struct Process front = queuePop(q);
-            *shmId = front.remningTime + 1;
-            running = front;
-
-            if (nextfitallocatingmem(&running))
-            {
-                isProcessRunNow = 1;
-                running.waitingTime = getClk() - running.arrivalTime;
-                fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
-                running.pid = startProcess(running);
-            }
-        }*/
-
         // to do : if it last process or the algorithm finish we will out from this loop done
         if (countProcess == numOfProcesses && queueIsEmpty(q) && !isProcessRunNow)
             break;
@@ -429,7 +464,7 @@ void SJF() //smallest running time first
     priorityQueueConstructor(pq);
     Process running;
     *shmId = -1;
-    bool isProcessRunNow = 0;
+    isProcessRunNow = 0;
     while (1)
     {
         // struct Process p;
@@ -473,18 +508,52 @@ void SJF() //smallest running time first
             isProcessRunNow = 0;
         }
         // to do pick a new process
-        //printQueue(q);
-        //printf("run now :%d, queue status %d\n",isProcessRunNow,queueIsEmpty(q));
-        if (!priorityQueueIsEmpty(pq) && !isProcessRunNow)
+
+        switch (chosenPolicy)
         {
-            printf("FCFS : i will pick process now\n");
-            struct Process front = priorityQueuePop(pq);
-            *shmId = front.remningTime + 1;
-            running = front;
-            isProcessRunNow = 1;
-            running.waitingTime = getClk() - running.arrivalTime;
-            running.pid = startProcess(running);
+        case 1:
+            if (firstfit())
+            {
+                isProcessRunNow = 1;
+            }
+            if (!priorityQueueIsEmpty(pq) && !isProcessRunNow)
+            {
+                printf("FCFS : i will pick process now\n");
+                struct Process front = priorityQueuePop(pq);
+                *shmId = front.remningTime + 1;
+                running = front;
+                if (firstFitAllocate(&running))
+                {
+                    isProcessRunNow = 1;
+                    running.waitingTime = getClk() - running.arrivalTime;
+                    fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                    running.pid = startProcess(running);
+                }
+            }
+
+            break;
+        case 2:
+            if (nextfit())
+                isProcessRunNow = 1;
+            if (!priorityQueueIsEmpty(pq) && !isProcessRunNow)
+            {
+                printf("FCFS : i will pick process now\n");
+                struct Process front = priorityQueuePop(pq);
+                *shmId = front.remningTime + 1;
+                running = front;
+                if (nextfitallocatingmem(&running))
+                {
+                    isProcessRunNow = 1;
+                    running.waitingTime = getClk() - running.arrivalTime;
+                    fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                    running.pid = startProcess(running);
+                }
+            }
+            break;
+        default:
+            break;
         }
+
         // to do : if it last process or the algorithm finish we will out from this loop done
         if (countProcess == numOfProcesses && priorityQueueIsEmpty(pq) && !isProcessRunNow)
             break;
@@ -500,7 +569,7 @@ void SRTN()
     int time = -1;
     Process running;
     *shmId = -1;
-    bool isProcessRunNow = 0;
+    isProcessRunNow = 0;
     while (1)
     {
 
@@ -540,27 +609,74 @@ void SRTN()
             isProcessRunNow = 0;
         }
 
-        if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
+        switch (chosenPolicy)
         {
-            if (pq->head->data.remningTime < pq->head->data.runTime)
+        case 1:
+            if (firstfit())
             {
-                printf("SRTN : i will continue process now\n");
-                struct Process front = priorityQueuePop(pq);
-                *shmId = front.remningTime + 1;
-                running = front;
                 isProcessRunNow = 1;
-                continueProcess(running);
             }
-            else
+            if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
             {
-                printf("SRTN : i will pick process now\n");
-                struct Process front = priorityQueuePop(pq);
-                *shmId = front.remningTime + 1;
-                running = front;
-                isProcessRunNow = 1;
-                running.pid = startProcess(running);
+                if (pq->head->data.remningTime < pq->head->data.runTime)
+                {
+                    printf("SRTN : i will continue process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    isProcessRunNow = 1;
+                    continueProcess(running);
+                }
+                else
+                {
+                    printf("SRTN : i will pick process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
             }
+            break;
+        case 2:
+            if (nextfit())
+                isProcessRunNow = 1;
+            if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
+            {
+                if (pq->head->data.remningTime < pq->head->data.runTime)
+                {
+                    printf("SRTN : i will continue process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    isProcessRunNow = 1;
+                    continueProcess(running);
+                }
+                else
+                {
+                    printf("SRTN : i will pick process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
+            }
+            break;
+        default:
+            break;
         }
+
         if (!priorityQueueIsEmpty(pq) && isProcessRunNow && *shmId > pq->head->data.remningTime) //no finish yet(stop it and push it pack to queue)
         {
             if (running.remningTime >= running.runTime)
@@ -597,7 +713,7 @@ void HPF()
     int time = -1;
     Process running;
     *shmId = -1;
-    bool isProcessRunNow = 0;
+    isProcessRunNow = 0;
     while (1)
     {
 
@@ -648,7 +764,74 @@ void HPF()
             stopProcess(running);
             isProcessRunNow = 0;
         }
-        if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
+        switch (chosenPolicy)
+        {
+        case 1:
+            if (firstfit())
+            {
+                isProcessRunNow = 1;
+            }
+            if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
+            {
+                if (pq->head->data.remningTime < pq->head->data.runTime)
+                {
+                    printf("SRTN : i will continue process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    isProcessRunNow = 1;
+                    continueProcess(running);
+                }
+                else
+                {
+                    printf("SRTN : i will pick process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
+            }
+            break;
+        case 2:
+            if (nextfit())
+                isProcessRunNow = 1;
+            if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
+            {
+                if (pq->head->data.remningTime < pq->head->data.runTime)
+                {
+                    printf("SRTN : i will continue process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    isProcessRunNow = 1;
+                    continueProcess(running);
+                }
+                else
+                {
+                    printf("SRTN : i will pick process now\n");
+                    struct Process front = priorityQueuePop(pq);
+                    *shmId = front.remningTime + 1;
+                    running = front;
+                    if (firstFitAllocate(&running))
+                    {
+                        isProcessRunNow = 1;
+                        running.waitingTime = getClk() - running.arrivalTime;
+                        fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                        running.pid = startProcess(running);
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+        /* if (!isProcessRunNow && !priorityQueueIsEmpty(pq))
         {
             if (pq->head->data.remningTime < pq->head->data.runTime)
             {
@@ -668,7 +851,7 @@ void HPF()
                 isProcessRunNow = 1;
                 running.pid = startProcess(running);
             }
-        }
+        }*/
 
         /* while (time == getClk())
             ;
