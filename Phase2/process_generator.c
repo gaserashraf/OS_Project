@@ -11,13 +11,12 @@ struct Process *processes;
 int *shmIdTerm, shmidterm; //for the running process
 int main(int argc, char *argv[])
 {
-
+    char *fileName = (char *)malloc(40 * sizeof(char));
+    int chosenAlgorithm = -1;
+    int processParam = -1;
+    int chosenPolicy = -1;
     signal(SIGINT, clearResources);
-    char *fileName;
-    int chosenAlgorithm = 5;
-    int processParam = 1;
-    // 1. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
-    /* if (argc < 3)
+    if (argc < 4)
     {
         perror("Invlaid number of arguments");
         exit(-1);
@@ -26,20 +25,14 @@ int main(int argc, char *argv[])
     {
         strcpy(fileName, argv[1]);
         chosenAlgorithm = atoi(argv[3]);
-        if (argc > 3)
+        if (argc > 5)
+        {
             processParam = atoi(argv[5]);
-    }*/
-
-    /* key_t sharedMemKey = ftok("Makefile", 65);
-    shmidterm = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
-    if (shmid == -1)
-    {
-        perror("Error in creating message queue");
-        return -1;
+            chosenPolicy = atoi(argv[7]);
+        }
+        else if (argc > 4)
+            chosenPolicy = atoi(argv[5]);
     }
-    shmIdTerm = (int *)shmat(shmid, (void *)0, 0);
-    *shmIdTerm = false;*/
-
     // 5. Create a data structure for processes and provide it with its parameters.
     processes = (struct Process *)malloc(100 * sizeof(struct Process));
     // 2. Read the input files.
@@ -90,11 +83,11 @@ int main(int argc, char *argv[])
     {
         printf("hello i will fork scheduler...\n");
         system("gcc scheduler.c -o scheduler.out");
-        /* if (argc > 3)
-            execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], NULL);
+        if (argc > 5)
+            execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], argv[7], NULL);
         else
-            execl("scheduler.out", "scheduler", argv[3], numProcesses, NULL);*/
-        execl("scheduler.out", "scheduler", NULL);
+            execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], NULL);
+        //execl("scheduler.out", "scheduler", NULL);
     }
     FILE *f = fopen("key", "r");
     key_t key_id = ftok("key", 'a');
@@ -108,14 +101,6 @@ int main(int argc, char *argv[])
     {
         printf("Process Generator:msgQ created Successfully with id = %d\n", msgQ);
     }
-
-    /* procHeaders.mtype = 1;
-    procHeaders.algorithm = chosenAlgorithm;
-    procHeaders.numOfProcesses = numOfProcesses;
-    procHeaders.processParameter = processParam;
-    int val = msgsnd(msgQ, &procHeaders, sizeof(procHeaders.algorithm) + sizeof(procHeaders.numOfProcesses) + sizeof(procHeaders.processParameter), !IPC_NOWAIT);
-    if (val == -1)
-        perror("Errror in send\n");*/
 
     // 4. Use this function after creating the clock Process to initialize clock.
     initClk();

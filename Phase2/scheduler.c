@@ -92,22 +92,16 @@ int main(int argc, char *argv[])
     fprintf(schedulerLog, "#at time x process y started arrive time w running time z remning time y waiting time k\n");
     MemoryLog = fopen("memory.log", "w");
     fprintf(MemoryLog, "at time x allocated y bytes for Processs z from i to j\n");
-    /*  struct processHeaders procHeaders;
-    procHeaders.mtype = 1;
-    int val = msgrcv(msgQ, &procHeaders, sizeof(procHeaders.algorithm) + sizeof(procHeaders.numOfProcesses) + sizeof(procHeaders.processParameter), 0, !IPC_NOWAIT);
-    if (val == -1)
-        perror("Error in Receiving");
-    printf("ChosenAlgorithm: %ld\nnumOfProcesses: %ld\nprocessParam:%ld\n", procHeaders.algorithm, procHeaders.numOfProcesses, procHeaders.processParameter);*/
 
-    /*chosenAlgorithm = atoi(argv[1]);
+    chosenAlgorithm = atoi(argv[1]);
     numOfProcesses = atoi(argv[2]);
     if (chosenAlgorithm == 5)
-        paramter = atoi(argv[3]);*/
-    // to DO :!!!!!!!! replace it with argc
-    chosenAlgorithm = 5;
-    if (chosenAlgorithm == 5)
-        paramter = 2;
-    chosenPolicy = 1;
+    {
+        paramter = atoi(argv[3]);
+        chosenPolicy = atoi(argv[4]);
+    }
+    else
+        chosenPolicy = atoi(argv[3]);
 
     key_t sharedMemKey = ftok("Makefile", 65);
     shmid = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
@@ -117,12 +111,26 @@ int main(int argc, char *argv[])
         return -1;
     }
     shmId = (int *)shmat(shmid, (void *)0, 0);
-
-    //  FCFS();
-    // SRTN();
-    // SJF();
-    // RR(5);
-    HPF();
+    switch (chosenAlgorithm)
+    {
+    case 1:
+        FCFS();
+        break;
+    case 2:
+        SJF();
+        break;
+    case 3:
+        HPF();
+        break;
+    case 4:
+        SRTN();
+        break;
+    case 5:
+        RR(paramter);
+        break;
+    default:
+        break;
+    }
     printf("Terminate msgQ from Scheduler\n");
     fclose(MemoryLog);
     fclose(schedulerLog);
@@ -409,7 +417,6 @@ void FCFS()
         case 1:
             if (firstfit())
             {
-                printf("kaaaaaaaaaaaaak\n");
                 isProcessRunNow = 1;
             }
             if (!queueIsEmpty(q) && !isProcessRunNow)

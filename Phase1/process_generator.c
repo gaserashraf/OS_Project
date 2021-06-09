@@ -13,11 +13,11 @@ int main(int argc, char *argv[])
 {
 
     signal(SIGINT, clearResources);
-    char *fileName;
-    int chosenAlgorithm = 5;
-    int processParam = 1;
+    char *fileName = (char *)malloc(40 * sizeof(char));
+    int chosenAlgorithm = -1;
+    int processParam = -1;
     // 1. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
-    /* if (argc < 3)
+    if (argc < 4)
     {
         perror("Invlaid number of arguments");
         exit(-1);
@@ -26,19 +26,11 @@ int main(int argc, char *argv[])
     {
         strcpy(fileName, argv[1]);
         chosenAlgorithm = atoi(argv[3]);
-        if (argc > 3)
+        if (argc > 4)
             processParam = atoi(argv[5]);
-    }*/
-
-    /* key_t sharedMemKey = ftok("Makefile", 65);
-    shmidterm = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
-    if (shmid == -1)
-    {
-        perror("Error in creating message queue");
-        return -1;
     }
-    shmIdTerm = (int *)shmat(shmid, (void *)0, 0);
-    *shmIdTerm = false;*/
+
+    
 
     // 5. Create a data structure for processes and provide it with its parameters.
     processes = (struct Process *)malloc(100 * sizeof(struct Process));
@@ -89,11 +81,11 @@ int main(int argc, char *argv[])
     {
         printf("hello i will fork scheduler...\n");
         system("gcc scheduler.c -o scheduler.out");
-        /* if (argc > 3)
+        if (argc > 3)
             execl("scheduler.out", "scheduler", argv[3], numProcesses, argv[5], NULL);
         else
-            execl("scheduler.out", "scheduler", argv[3], numProcesses, NULL);*/
-        execl("scheduler.out", "scheduler", NULL);
+            execl("scheduler.out", "scheduler", argv[3], numProcesses, NULL);
+        //execl("scheduler.out", "scheduler", NULL);
     }
     FILE *f = fopen("key", "r");
     key_t key_id = ftok("key", 'a');

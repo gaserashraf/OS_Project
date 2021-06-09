@@ -23,7 +23,7 @@ void cleanup(int signum);
 struct Queue *q = NULL;
 struct priorityQueue *pq = NULL;
 struct Process processRecv;
-int chosenAlgorithm, paramter = -1, numOfProcesses = 10;
+int chosenAlgorithm, paramter = -1, numOfProcesses = -1;
 bool lastProcess = 0;
 int msgQ;
 
@@ -49,21 +49,11 @@ int main(int argc, char *argv[])
 
     schedulerLog = fopen("schedular.log", "w");
     fprintf(schedulerLog, "at time x process y started arrive time w running time z remning time y waiting time k\n");
-    /*  struct processHeaders procHeaders;
-    procHeaders.mtype = 1;
-    int val = msgrcv(msgQ, &procHeaders, sizeof(procHeaders.algorithm) + sizeof(procHeaders.numOfProcesses) + sizeof(procHeaders.processParameter), 0, !IPC_NOWAIT);
-    if (val == -1)
-        perror("Error in Receiving");
-    printf("ChosenAlgorithm: %ld\nnumOfProcesses: %ld\nprocessParam:%ld\n", procHeaders.algorithm, procHeaders.numOfProcesses, procHeaders.processParameter);*/
 
-    /*chosenAlgorithm = atoi(argv[1]);
+    chosenAlgorithm = atoi(argv[1]);
     numOfProcesses = atoi(argv[2]);
     if (chosenAlgorithm == 5)
-        paramter = atoi(argv[3]);*/
-    // to DO :!!!!!!!! replace it with argc
-    chosenAlgorithm = 5;
-    if (chosenAlgorithm == 5)
-        paramter = 2;
+        paramter = atoi(argv[3]);
 
     key_t sharedMemKey = ftok("Makefile", 65);
     shmid = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
@@ -73,12 +63,27 @@ int main(int argc, char *argv[])
         return -1;
     }
     shmId = (int *)shmat(shmid, (void *)0, 0);
+    switch (chosenAlgorithm)
+    {
+    case 1:
+        FCFS();
+        break;
+    case 2:
+        SJF();
+        break;
+    case 3:
+        HPF();
+        break;
+    case 4:
+        SRTN();
+        break;
+    case 5:
+        RR(paramter);
+        break;
+    default:
+        break;
+    }
 
-    // FCFS();
-    SRTN();
-    // SJF();
-    // RR(5);
-    // HPF();
     printf("Terminate msgQ from Scheduler\n");
     fclose(schedulerLog);
     msgctl(msgQ, IPC_RMID, (struct msqid_ds *)0);
