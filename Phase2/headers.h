@@ -46,11 +46,8 @@ struct Process
     int waitingTime;
     int stopTime;
     int memSize;
-<<<<<<< HEAD
-    int startIndex;   //start of process in memory
+    int startIndex; //start of process in memory
     int endIndex;
-=======
->>>>>>> 2743ee2a129d2ef7e09dda54b9d22f4b71bbaf17
     enum processStatus status;
 };
 typedef struct Process Process;
@@ -116,10 +113,10 @@ void nodeConstructor(node *n, Process p)
     n->data.status = p.status;
     n->data.priority = p.priority;
     n->data.pid = p.pid;
-    n->data.memSize=p.memSize;
-    n->data.startIndex=p.startIndex;
-    n->data.endIndex=p.endIndex;
-    
+    n->data.memSize = p.memSize;
+    n->data.startIndex = p.startIndex;
+    n->data.endIndex = p.endIndex;
+
     n->next = NULL;
 }
 struct Queue
@@ -321,7 +318,6 @@ bool linkedlistIsEmpty(linkedlist *ll) // check if is empty
     if (ll == NULL || ll->head == NULL)
         return true;
     return false;
-
 }
 void linkedlistPush(linkedlist *ll, Process p) // push new process
 {
@@ -338,50 +334,50 @@ void linkedlistPush(linkedlist *ll, Process p) // push new process
         ll->tail = temp;
     }
 }
-Process linkedlistdelete(linkedlist *ll,int pid) // pop the process in the top
+Process linkedlistdelete(linkedlist *ll, int pid) // pop the process in the top
 {
     Process p = {.id = -1};
     if (linkedlistIsEmpty(ll))
     {
         return p;
     }
-    
+
     node *temp = ll->head;
-    node *prev= NULL;
-    while(temp!=NULL)
+    node *prev = NULL;
+    while (temp != NULL)
     {
-    	prev=temp;
-    	if(temp->data.pid==p.pid)
-    		break;
-    	
-    	temp=temp->next;
+        prev = temp;
+        if (temp->data.pid == p.pid)
+            break;
+
+        temp = temp->next;
     }
-    if(temp==NULL)
-    	return p;
-    	
+    if (temp == NULL)
+        return p;
+
     p = temp->data;
-    prev->next=temp->next;
-    temp->next=NULL;
+    prev->next = temp->next;
+    temp->next = NULL;
     free(temp);
     ll->size = ll->size - 1;
     if (ll->head == NULL)
         ll->tail = NULL;
     return p;
 }
-bool inList(linkedlist *ll,Process p)
+bool inList(linkedlist *ll, Process p)
 {
-	if (linkedlistIsEmpty(ll))
+    if (linkedlistIsEmpty(ll))
     {
         return false;
     }
     node *temp = ll->head;
-    while(temp!=NULL)
+    while (temp != NULL)
     {
-    	if(temp->data.id==p.id)
-    	{
-    		return true;
-    	}
-    	temp=temp->next;
+        if (temp->data.id == p.id)
+        {
+            return true;
+        }
+        temp = temp->next;
     }
     return false;
 }

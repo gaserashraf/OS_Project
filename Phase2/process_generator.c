@@ -50,19 +50,19 @@ int main(int argc, char *argv[])
         perror("Error While reading processes.txt file\n");
         exit(-1);
     }
-    int a, b, c, d, f;
+    int a, b, c, d, g;
     //TODO: Change this method to skip first line
     char q[10], w[10], e[10], r[10], t[10];
     fscanf(processesInput, "%s %s %s %s %s", q, w, e, r, t);
     int numOfProcesses = 0;
-    while (fscanf(processesInput, "%d %d %d %d %d", &a, &b, &c, &d, &f) != -1)
+    while (fscanf(processesInput, "%d %d %d %d %d", &a, &b, &c, &d, &g) != -1)
     {
         processes[numOfProcesses].id = a;
         processes[numOfProcesses].arrivalTime = b;
         processes[numOfProcesses].runTime = c;
         processes[numOfProcesses].remningTime = c;
         processes[numOfProcesses].priority = d;
-        processes[numOfProcesses].memSize = f;
+        processes[numOfProcesses].memSize = g;
         numOfProcesses++;
     }
     char numProcesses[500];

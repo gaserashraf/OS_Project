@@ -12,6 +12,20 @@
     bool haveProcess;
 }*/
 
+/*
+// call it when looping over all waitingList items
+
+//////////////////////////////
+bool firstFitAllocate(Process *p);
+bool FFDeallocate(Process *p);
+
+
+
+
+/////////////////////////////
+
+*/
+
 void FCFS();
 void SJF();
 void HPF();
@@ -20,23 +34,29 @@ void getArrivalProcessAndPushIt();
 void clearResources(int signum);
 void RR(int quantum);
 void cleanup(int signum);
+bool nextfit();
 bool nextfitallocatingmem(Process *p);
 void nextfitdeallocatingmem(Process *p);
+bool firstFitAllocate(Process *p);
+bool firstFitDeallocate(Process *p);
+bool firstfit();
+struct linkedlist *waitingListFirstFit = NULL;
+int memoryFirstFit[1024]; // 0=>free & 1=>used
 struct Queue *q = NULL;
 struct priorityQueue *pq = NULL;
-struct linkedlist *waitList = NULL;      //emad
+struct linkedlist *waitList = NULL; //emad
 struct Process processRecv;
-int chosenAlgorithm, paramter = -1, numOfProcesses = 5;
+int chosenAlgorithm, paramter = -1, numOfProcesses = 5, chosenPolicy = -1;
 bool lastProcess = 0;
 int msgQ;
-bool flag=0;   //emad
+bool flag = 0;        //emad
 bool memory[1024];    //the memory         emad
-int pointertomem=0;    //pointer to the memory used in next fit algorithm   emad
-bool allocate=0;            //flag to check if there is enough memory       emad
-bool nomem=0;          //flag to check if there is no enough memory        emad
+int pointertomem = 0; //pointer to the memory used in next fit algorithm   emad
+bool allocate = 0;    //flag to check if there is enough memory       emad
+bool nomem = 0;       //flag to check if there is no enough memory        emad
 
 bool isProcessRunNow = 0;
- 
+
 int countProcess = 0;
 int *shmId, shmid; //for the running process
 
@@ -45,13 +65,16 @@ FILE *MemoryLog;
 
 int main(int argc, char *argv[])
 {
-	for(int i=0;i<1024;i++)
-	{
-		memory[i]=0;
-	}
-	waitList = (linkedlist *)malloc(sizeof(linkedlist));       //emad
-	linkedlistConstructor(waitList );            //emad
- 
+    for (int i = 0; i < 1024; i++)
+    {
+        memory[i] = 0;
+    }
+    waitList = (linkedlist *)malloc(sizeof(linkedlist)); //emad
+    linkedlistConstructor(waitList);                     //emad
+
+    waitingListFirstFit = (linkedlist *)malloc(sizeof(linkedlist)); //emad
+    linkedlistConstructor(waitingListFirstFit);                     //emad
+
     signal(SIGINT, cleanup);
     initClk();
     printf("hello i am scheduler...\n");
@@ -84,6 +107,7 @@ int main(int argc, char *argv[])
     chosenAlgorithm = 5;
     if (chosenAlgorithm == 5)
         paramter = 2;
+    chosenPolicy = 1;
 
     key_t sharedMemKey = ftok("Makefile", 65);
     shmid = shmget(sharedMemKey, 4000, 0666 | IPC_CREAT); // crete shared
@@ -122,7 +146,7 @@ int startProcess(Process p)
     p.waitingTime = getClk() - p.arrivalTime;
     printf("at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
     fprintf(schedulerLog, "at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime);
-    
+
     //printf("at time %d process %d started arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
     return p.pid;
 }
@@ -154,24 +178,24 @@ void finishProcess(Process p)
     *shmId = -1;
     fprintf(MemoryLog, "at time %d Deallocated %d bytes for process %d from %d to %d\n", getClk(), p.memSize, p.id, p.startIndex, p.endIndex);
     nextfitdeallocatingmem(&p);
-    flag=0;
-    node* temp = waitList->head;
-    while(temp != NULL) 
+    flag = 0;
+    node *temp = waitList->head;
+    while (temp != NULL)
     {
-        if(nextfitallocatingmem(&temp->data))
-			{
-			 	printf("FCFS : i will pick process now\n");
-				*shmId = temp->data.remningTime + 1;
-				flag =1;
-				temp->data.waitingTime = getClk() - temp->data.arrivalTime;
-				fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->data.memSize, temp->data.id, temp->data.startIndex, temp->data.endIndex);
-				temp->data.pid = startProcess(temp->data);
-			}
+        if (nextfitallocatingmem(&temp->data))
+        {
+            printf("FCFS : i will pick process now\n");
+            *shmId = temp->data.remningTime + 1;
+            flag = 1;
+            temp->data.waitingTime = getClk() - temp->data.arrivalTime;
+            fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->data.memSize, temp->data.id, temp->data.startIndex, temp->data.endIndex);
+            temp->data.pid = startProcess(temp->data);
+        }
     }
-    if(flag)
+    if (flag)
     {
-        	isProcessRunNow = 1;
-    }  
+        isProcessRunNow = 1;
+    }
     fprintf(schedulerLog, "at time %d process %d finished arrive time %d running time %d remning time %d waiting time %d TA %d WTA %.2f\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, p.waitingTime, getClk() - p.arrivalTime, WTA);
     //printf("at time %d process %d finish arrive time %d running time %d remning time %d waiting time %d\n", getClk(), p.id, p.arrivalTime, p.runTime, p.remningTime, waitingTime);
 }
@@ -280,10 +304,10 @@ void FCFS()
     printf("Schuder: hello i started FCFS...\n");
     q = (Queue *)malloc(sizeof(Queue));
     queueConstructor(q);
-    
+
     Process running;
     *shmId = -1;
-    
+
     isProcessRunNow = 0;
     while (1)
     {
@@ -329,44 +353,68 @@ void FCFS()
             finishProcess(running);
         }
         // to do pick a new process
-        //  printQueue(q);
-        //  printf("run now :%d, queue status %d\n", isProcessRunNow, queueIsEmpty(q));
-        flag=0;
-        node* temp = waitList->head;
-		while(temp != NULL && !isProcessRunNow)
-		{
-			if(nextfitallocatingmem(&temp->data))
-			{
-			 	printf("FCFS : i will pick process now\n");
-				*shmId = temp->data.remningTime + 1;
-				flag =1;
-				temp->data.waitingTime = getClk() - temp->data.arrivalTime;
-				fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->data.memSize, temp->data.id, temp->data.startIndex, temp->data.endIndex);
-				temp->data.pid = startProcess(temp->data);
-			}
-		}
-        if(flag)
+        switch (chosenPolicy)
         {
-        	isProcessRunNow = 1;
-        }    
-           
-        if (!queueIsEmpty(q) && !isProcessRunNow)
+        case 1:
+            if (firstfit())
+            {
+                printf("kaaaaaaaaaaaaak\n");
+                isProcessRunNow = 1;
+            }
+            if (!queueIsEmpty(q) && !isProcessRunNow)
+            {
+                printf("FCFS : i will pick process now\n");
+                struct Process front = queuePop(q);
+                *shmId = front.remningTime + 1;
+                running = front;
+
+                if (firstFitAllocate(&running))
+                {
+                    isProcessRunNow = 1;
+                    running.waitingTime = getClk() - running.arrivalTime;
+                    fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                    running.pid = startProcess(running);
+                }
+            }
+            break;
+        case 2:
+            if (nextfit())
+                isProcessRunNow = 1;
+            if (!queueIsEmpty(q) && !isProcessRunNow)
+            {
+                printf("FCFS : i will pick process now\n");
+                struct Process front = queuePop(q);
+                *shmId = front.remningTime + 1;
+                running = front;
+
+                if (nextfitallocatingmem(&running))
+                {
+                    isProcessRunNow = 1;
+                    running.waitingTime = getClk() - running.arrivalTime;
+                    fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                    running.pid = startProcess(running);
+                }
+            }
+            break;
+        default:
+            break;
+        }
+
+        /*if (!queueIsEmpty(q) && !isProcessRunNow)
         {
             printf("FCFS : i will pick process now\n");
             struct Process front = queuePop(q);
             *shmId = front.remningTime + 1;
             running = front;
-            
-            
-            if(nextfitallocatingmem(&running))
+
+            if (nextfitallocatingmem(&running))
             {
-            	printf("kaaaaaaaaaaaaaaaaaaak\n");
-            	isProcessRunNow = 1;
-            	running.waitingTime = getClk() - running.arrivalTime;
-            	fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
-            	running.pid = startProcess(running);
+                isProcessRunNow = 1;
+                running.waitingTime = getClk() - running.arrivalTime;
+                fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), running.memSize, running.id, running.startIndex, running.endIndex);
+                running.pid = startProcess(running);
             }
-        }
+        }*/
 
         // to do : if it last process or the algorithm finish we will out from this loop done
         if (countProcess == numOfProcesses && queueIsEmpty(q) && !isProcessRunNow)
@@ -648,87 +696,164 @@ void cleanup(int signum)
 
 bool nextfitallocatingmem(Process *p)
 {
-	int startpos=0;
-	int counter=0;
+    int startpos = 0;
+    int counter = 0;
 
-	allocate=0;
-	nomem=0;
-	if((pointertomem+p->memSize)<1024)
-	{
-		startpos=pointertomem;
-	}
-	else
-	{
-		startpos=0;
-	}
-	
-	for(int i=startpos;i<1024;i++)
-	{
-		if(memory[i]==0)
-		{
-			allocate=1;
-			nomem=0;
-			counter++;
-			if(counter==p->memSize-1)
-			{
-				break;
-			}
-		}
-		else
-		{
-			allocate=0;
-			nomem=1;
-			counter=0;
-		}
-	}
-	
-	if(allocate)
-	{
-		p->startIndex=pointertomem;
-		p->endIndex=p->memSize+pointertomem;
-		linkedlistdelete(waitList,p->id);
-		for(int i=pointertomem;i<p->memSize;i++)
-		{ 
-			memory[i]=1;
-			if(i<1023)
-			{
-				pointertomem=i+1;
-			}
-			else
-			{
-				pointertomem=0;
-			}
-		}
-		return true;
-	}
-	else if(nomem)
-	{
-		if(!inList(waitList,*p))
-		{
-			linkedlistPush(waitList, *p);
-		}
-		return false;
-	}
-	
+    allocate = 0;
+    nomem = 0;
+    if ((pointertomem + p->memSize) < 1024)
+    {
+        startpos = pointertomem;
+    }
+    else
+    {
+        startpos = 0;
+    }
 
+    for (int i = startpos; i < 1024; i++)
+    {
+        if (memory[i] == 0)
+        {
+            allocate = 1;
+            nomem = 0;
+            counter++;
+            if (counter == p->memSize - 1)
+            {
+                break;
+            }
+        }
+        else
+        {
+            allocate = 0;
+            nomem = 1;
+            counter = 0;
+        }
+    }
+
+    if (allocate)
+    {
+        p->startIndex = pointertomem;
+        p->endIndex = p->memSize + pointertomem;
+        linkedlistdelete(waitList, p->id);
+        for (int i = pointertomem; i < p->memSize; i++)
+        {
+            memory[i] = 1;
+            if (i < 1023)
+            {
+                pointertomem = i + 1;
+            }
+            else
+            {
+                pointertomem = 0;
+            }
+        }
+        return true;
+    }
+    else if (nomem)
+    {
+        if (!inList(waitList, *p))
+        {
+            linkedlistPush(waitList, *p);
+        }
+        return false;
+    }
 }
-
-
 
 void nextfitdeallocatingmem(Process *p)
 {
-	for(int i=p->startIndex;i<p->endIndex;i++)
-	{
-		memory[i]=0;
-		
-	}
-	if(p->startIndex+p->memSize==pointertomem)
-	{
-		pointertomem=p->startIndex;
-	}
+    for (int i = p->startIndex; i < p->endIndex; i++)
+    {
+        memory[i] = 0;
+    }
+    if (p->startIndex + p->memSize == pointertomem)
+    {
+        pointertomem = p->startIndex;
+    }
 }
 
+bool nextfit()
+{
+    flag = 0;
+    node *temp = waitList->head;
+    while (temp != NULL && !isProcessRunNow)
+    {
+        if (nextfitallocatingmem(&temp->data))
+        {
+            printf("FCFS : i will pick process now\n");
+            *shmId = temp->data.remningTime + 1;
+            flag = 1;
+            temp->data.waitingTime = getClk() - temp->data.arrivalTime;
+            fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->data.memSize, temp->data.id, temp->data.startIndex, temp->data.endIndex);
+            temp->data.pid = startProcess(temp->data);
+        }
+    }
 
+    return flag;
+}
+
+bool firstFitAllocate(Process *p)
+{
+    int freeMemory = 0, startIndex = -1;
+    for (int i = 0; i < 1024; ++i)
+    {
+        if (freeMemory == 0 && memoryFirstFit[i] == 0)
+            startIndex = i;
+        if (memoryFirstFit[i] == 0)
+            freeMemory++;
+        else
+        {
+            freeMemory = 0;
+            startIndex = -1;
+        }
+        if (freeMemory == p->memSize)
+            break;
+    }
+    if (startIndex != -1 && freeMemory >= p->memSize)
+    {
+        linkedlistdelete(waitingListFirstFit, p->id);
+        p->startIndex = startIndex;
+        p->endIndex = p->startIndex + p->memSize;
+        p->status = Ready;
+        for (int i = startIndex; i < freeMemory; ++i)
+            memoryFirstFit[i] = 1;
+        return true;
+    }
+    else
+    {
+        if (!inList(waitingListFirstFit, *p))
+        {
+            linkedlistPush(waitingListFirstFit, *p); // could be wrong
+        }
+        return false;
+    }
+}
+bool firstFitDeallocate(Process *p)
+{
+    for (int i = p->startIndex; i < p->endIndex; ++i)
+    {
+        memoryFirstFit[i] = 0;
+    }
+    return true;
+}
+
+bool firstfit()
+{
+    flag = 0;
+    node *temp = waitingListFirstFit->head;
+    while (temp != NULL && !isProcessRunNow)
+    {
+        if (firstFitAllocate(&temp->data))
+        {
+            printf("FCFS : i will pick process now\n");
+            *shmId = temp->data.remningTime + 1;
+            flag = 1;
+            temp->data.waitingTime = getClk() - temp->data.arrivalTime;
+            fprintf(MemoryLog, "at time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->data.memSize, temp->data.id, temp->data.startIndex, temp->data.endIndex);
+            temp->data.pid = startProcess(temp->data);
+        }
+    }
+    return flag;
+}
 
 /* 
 // should we increase the waiting time for the waitinglist processes?
@@ -750,12 +875,3 @@ void nextfitdeallocatingmem(Process *p)
 
 
 */
-
-
-
-
-
-
-
-
-
