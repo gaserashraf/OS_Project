@@ -17,17 +17,17 @@ I/O, using other resources than CPU or waiting on unavailable resource).
 
 
 ## Algorithms Implemented for Scheduling:
-- First Come First Serve
-- Shortest Job First
-- Preemtive Highest Priority First
-- Shortest Remaining Time Next
-- Round Robin
+- [x] First Come First Serve
+- [x] Shortest Job First
+- [x] Preemtive Highest Priority First
+- [x] Shortest Remaining Time Next
+- [x] Round Robin
 
 ## Algorithms Implemented for Memory Allocation:
-- First Fit
-- Next Fit
-- Best Fit (TODO)
-- Buddy System Allocation (TODO)
+- [x] First Fit
+- [x] Next Fit
+- [ ] Best Fit
+- [ ] Buddy System Allocation
 
 ## Assumptions : 
   - No process can arrive at 0 (this causes inconsistency as the program requires time to initialize)
